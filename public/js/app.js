@@ -5,7 +5,8 @@ import {OrbitControls} from 'https://cdn.skypack.dev/pin/three@v0.128.0-rCTln0kV
 
 let container;
 let camera, controls, scene, renderer;
-let loader, loadedFile;
+let pcdLoader, loadedFile;
+let fontLoader, font;
 let lastViewportSettingsSaved = false;
 
 init();
@@ -59,7 +60,11 @@ function init() {
     renderer.setSize(window.innerWidth - 260, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    loader = new PCDLoader();
+    pcdLoader = new PCDLoader();
+    fontLoader = new THREE.FontLoader();
+    fontLoader.load( 'fonts/helvetiker_regular.typeface.json', function ( response ) {
+        font = response;
+    } );
 
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -92,9 +97,52 @@ function loadCloudPoints(url) {
         }
     }
 
-    loader.load(url, function (points) {
+    pcdLoader.load(url, function (points) {
         loadedFile = baseName(url);
         scene.add(points);
+
+        fetch(url + '.json')
+            .then(response => {
+                return response.json();
+            })
+            .then(json => {
+
+                let objects = json.objects.map(obj => {
+                    let map = {
+                        'class': obj.classTitle,
+                        'geometryType': obj.geometryType,
+                        'geometry': null,
+
+                    };
+
+                    let figure = json.figures.find(x => x.objectKey === obj.key);
+
+                    if (typeof figure === 'undefined') {
+                        return null
+                    }
+
+                    map.geometry = figure.geometry
+
+                    return map
+                });
+
+
+                objects.forEach(obj => {
+                    if (!obj) {
+                        return
+                    }
+
+                    drawHelperBox(obj)
+                })
+
+
+                /*const geometry = new THREE.BoxGeometry(0.5752128333615767, 0.5480897912194335, 2.8561831118359504);
+                geometry.translate(0.13521005088371357, 0.08174636110693423, 3.9492046827173195);
+                const object = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(0xff0000));
+                const box = new THREE.BoxHelper(object, 0xffff00);
+                scene.add(box);*/
+            });
+
         const center = getPointsCenter();
         controls.target.set(center.x, center.y, center.z);
 
@@ -105,6 +153,40 @@ function loadCloudPoints(url) {
 
         controls.update();
     });
+}
+
+function drawHelperBox(object) {
+    // draw main geometry
+    const box = new THREE.BoxGeometry(
+        object.geometry.dimensions.x,
+        object.geometry.dimensions.y,
+        object.geometry.dimensions.z
+    );
+    // move to coordinates
+    box.translate(
+        object.geometry.position.x,
+        object.geometry.position.y,
+        object.geometry.position.z
+    );
+    //let color = '#ff0000';
+    const mesh = new THREE.Mesh(box, new THREE.MeshBasicMaterial(0xff0000));
+    const helper = new THREE.BoxHelper(mesh, 0xff0000);
+    scene.add(helper);
+
+    // draw label
+    const text = new THREE.TextGeometry( object.class, {
+        font: font,
+        size: 0.05,
+        height: 0,
+    });
+    text.computeBoundingBox();
+    let textMesh1 = new THREE.Mesh( text, new THREE.MeshBasicMaterial(0xff0000));
+    textMesh1.position.x = object.geometry.position.x + object.geometry.dimensions.x / 2 + 0.03;
+    textMesh1.position.y = object.geometry.position.y + object.geometry.dimensions.y / 2 + 0.03;
+    textMesh1.position.z = object.geometry.position.z - object.geometry.dimensions.z / 2;
+    textMesh1.rotation.z = 3.15;
+    textMesh1.rotation.y = 3.1;
+    scene.add( textMesh1 );
 }
 
 function resetViewport() {
