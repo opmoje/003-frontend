@@ -24,8 +24,7 @@ button {
 #header {
     position: absolute;
     top: 15px;
-    left: 10px;
-    width: 300px;
+    left: 15px;
 }
 
 #info {
@@ -51,7 +50,23 @@ button {
     border: solid 1px #353535;
     border-radius: 5px;
     padding: 7px;
+}
+
+#moveStatus.safe {
+    animation: safeAnimation 2s ease-in 0s infinite;
+}
+
+#moveStatus.danger {
     animation: warningAnimation 2s ease-in 0s infinite;
+}
+
+@keyframes safeAnimation {
+    0%, 100% {
+        border-color: #353535;
+    }
+    50% {
+        border-color: #67c23a;
+    }
 }
 
 @keyframes warningAnimation {
@@ -62,7 +77,6 @@ button {
         border-color: #a30000;
     }
 }
-
 
 #explorer {
     position: absolute;
@@ -80,19 +94,17 @@ button {
     margin-top: 12px;
 }
 
-
 #status {
     position: absolute;
-    top: 65px;
+    top: 60px;
     left: 0;
-    width: 260px;
-    padding: 0 10px;
+    max-width: 290px;
+    padding: 0 20px;
     box-sizing: border-box;
     text-align: left;
     z-index: 1;
     overflow: auto;
 }
-
 
 a, button, input, select {
     pointer-events: auto;

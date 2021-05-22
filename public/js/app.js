@@ -50,7 +50,7 @@ function init() {
 
     renderer = new THREE.WebGLRenderer({antialias: true});
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth - 260, window.innerHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
     document.body.appendChild(renderer.domElement);
     container = document.createElement('div');
@@ -58,11 +58,11 @@ function init() {
     container.appendChild(renderer.domElement);
 
     // camera
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 40);
-    camera.position.x = 0;
-    camera.position.y = 0;
-    camera.position.z = -1;
-    camera.up.set(0, -1, 0);
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 1200);
+    camera.position.x = 0.0849549168207146;
+    camera.position.y = 3.5028061182970034;
+    camera.position.z = -4.691810677626485;
+    camera.up.set(0, 1, 0);
     scene.add(camera);
 
     // controls
@@ -101,9 +101,10 @@ function loadCloudPoints(url) {
         }
     }
 
-    pcdLoader.load(url, function (points) {
+    pcdLoader.load(url, function (pointsCloud) {
         loadedFile = baseName(url);
-        scene.add(points);
+        correctObjectRotation(pointsCloud);
+        scene.add(pointsCloud);
 
         fetch(url + '.json')
             .then(response => {
@@ -135,21 +136,13 @@ function loadCloudPoints(url) {
                 })
             });
 
-        const material = new THREE.MeshPhongMaterial({
-            color: 'lightblue',
-            opacity: 0.5,
-            transparent: true,
-        });
-
-        // door area
-        /*const geometry = new THREE.BoxGeometry(2, 0.05, 2.8561831118359504);
-        geometry.translate(0, -0.45, 4);
-        const object = new THREE.Mesh(geometry, material);
-        const box = new THREE.BoxHelper(object, 0x0e0e0e);
-        scene.add(box);*/
-
         // axis helper
         //scene.add(new THREE.AxesHelper(20));
+
+        const helper = new THREE.GridHelper( 60, 60 );
+        helper.material.opacity = 0.1;
+        helper.material.transparent = true;
+        scene.add( helper );
 
         // align camera center
         const center = getPointsCenter();
@@ -176,45 +169,37 @@ function drawHelperBoxForObject(object) {
         object.geometry.position.y,
         object.geometry.position.z
     );
+
     //let color = '#ff0000';
     const mesh = new THREE.Mesh(box, new THREE.MeshBasicMaterial(0xff0000));
+    correctObjectRotation(mesh);
     const helper = new THREE.BoxHelper(mesh, 0xff0000);
     scene.add(helper);
 
-    // draw label
-    drawHelperTextForObject(object)
+    scene.updateMatrixWorld(true);
 }
 
-function drawHelperTextForObject(object) {
-    const text = new THREE.TextGeometry(object.class, {
-        font: font,
-        size: 0.05,
-        height: 0,
-    });
-    text.computeBoundingBox();
-
-    let textMesh1 = new THREE.Mesh(text, new THREE.MeshBasicMaterial(0xff0000));
-    textMesh1.position.x = object.geometry.position.x + object.geometry.dimensions.x / 2;
-    textMesh1.position.y = object.geometry.position.y + object.geometry.dimensions.y / 2;
-    textMesh1.position.z = object.geometry.position.z - object.geometry.dimensions.z / 2;
-    textMesh1.rotation.z = 3.15;
-    textMesh1.rotation.y = 3.1;
-    scene.add(textMesh1);
+function correctObjectRotation(object) {
+    object.rotateX(1.5);
+    object.rotateZ(3.1);
+    object.rotateY(-0.1);
+    object.position.y += 5.5
 }
 
 function resetViewport() {
+    //console.log(camera.position.x, camera.position.y, camera.position.z);
     controls.reset();
 }
 
 function getPointsCenter() {
-    const points = scene.getObjectByName(loadedFile);
-    return points.geometry.boundingSphere.center;
+    const pointsCloud = scene.getObjectByName(loadedFile);
+    return pointsCloud.geometry.boundingSphere.center;
 }
 
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth - 260, window.innerHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 function animate() {

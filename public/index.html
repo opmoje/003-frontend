@@ -13,15 +13,14 @@
         <img
                 src="img/logo.svg"
                 class="c-sidebar-brand-full"
-                size="custom-size"
-                :height="45"
+                height="45"
         >
     </div>
     <div id="info">
         <div>ЛКМ: панорамирвоание</div>
         <div>ПКМ: вращение</div>
         <div>Колесо мыши: зуммирование</div>
-        <button id="resetViewportBtn">Сбросить Viewport</button>
+        <el-button size="mini" type="info" id="resetViewportBtn" plain>Сбросить Viewport</el-button>
     </div>
     <div id="explorer">
         <div>
@@ -73,13 +72,13 @@
                 </el-timeline-item>
             </el-timeline>
         </div>
-        <div id="moveStatus">
+        <div id="moveStatus" class="danger">
             <span class="tag-group__title">Продолжать движение</span>
             <!--<el-tag type="success" effect="dark">
-                Безопасно
+                безопасно
             </el-tag>-->
             <el-tag type="danger" effect="dark">
-                Опасно
+                опасно
             </el-tag>
         </div>
     </div>
