@@ -19,17 +19,25 @@ a:hover {
 
 button {
     cursor: pointer;
-    text-transform: uppercase;
+}
+
+#header {
+    position: absolute;
+    top: 15px;
+    left: 10px;
+    width: 300px;
 }
 
 #info {
     font-weight: 700;
     position: absolute;
     top: 0;
-    width: 100%;
-    padding: 7px;
+    width: 220px;
+    left: 50%;
+    margin-left: -110px;
+    padding: 10px;
     box-sizing: border-box;
-    text-align: center;
+    text-align: left;
     -moz-user-select: none;
     -webkit-user-select: none;
     -ms-user-select: none;
@@ -39,11 +47,28 @@ button {
     z-index: 1;
 }
 
+#moveStatus {
+    border: solid 1px #353535;
+    border-radius: 5px;
+    padding: 7px;
+    animation: warningAnimation 2s ease-in 0s infinite;
+}
+
+@keyframes warningAnimation {
+    0%, 100% {
+        border-color: #353535;
+    }
+    50% {
+        border-color: #a30000;
+    }
+}
+
+
 #explorer {
     position: absolute;
+    top: 3px;
     right: 0;
     width: 260px;
-    height: 100%;
     padding: 10px;
     box-sizing: border-box;
     text-align: left;
@@ -51,8 +76,14 @@ button {
     overflow: auto;
 }
 
+#explorerList {
+    margin-top: 12px;
+}
+
+
 #status {
     position: absolute;
+    top: 65px;
     left: 0;
     width: 260px;
     padding: 0 10px;
@@ -128,4 +159,15 @@ a, button, input, select {
 .el-timeline-item__tail {
     border-left: 2px solid #424242 !important;
 }
-
+.el-button--upload {
+    color: #FFF;
+    background-color: #000 !important;
+    border-color: #356C1A !important;;
+}
+.el-button--upload:focus, .el-button--upload:hover {
+    color: #009e09 !important;
+}
+.el-tag--dark.el-tag--danger {
+    background-color: #d74c4c !important;
+    border-color: #ca4444 !important;
+}

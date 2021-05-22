@@ -7,7 +7,7 @@ let container;
 let camera, controls, scene, renderer;
 let pcdLoader, loadedFile;
 let fontLoader, font;
-let lastViewportSettingsSaved = false;
+let initialViewportSettingsSaved = false;
 
 init();
 animate();
@@ -19,11 +19,11 @@ function init() {
             return response.json();
         })
         .then(cloudPointsList => {
-
             let loadFile = getCloudPointFromHash(),
                 loadFileFound = false;
 
-            var listEl = document.getElementById("explorer");
+            var listEl = document.getElementById("explorerList");
+
             cloudPointsList.forEach(item => {
                 let listItem = document.createElement('a');
                 let fileName = baseName(item);
@@ -32,14 +32,13 @@ function init() {
                 listItem.onclick = function () {
                     loadCloudPoints(item)
                 };
-                listEl.append(listItem)
+                listEl.append(listItem);
 
                 if (fileName === loadFile) {
                     loadFile = item;
                     loadFileFound = true;
                 }
             })
-
 
             if (loadFileFound) {
                 loadCloudPoints(loadFile);
@@ -49,27 +48,24 @@ function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
 
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 40);
-    camera.position.x = 0.4;
-    camera.position.z = -1;
-    camera.up.set(0, -1, 0);
-    scene.add(camera);
-
     renderer = new THREE.WebGLRenderer({antialias: true});
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth - 260, window.innerHeight);
+
     document.body.appendChild(renderer.domElement);
-
-    pcdLoader = new PCDLoader();
-    fontLoader = new THREE.FontLoader();
-    fontLoader.load( 'fonts/helvetiker_regular.typeface.json', function ( response ) {
-        font = response;
-    } );
-
     container = document.createElement('div');
     document.body.appendChild(container);
     container.appendChild(renderer.domElement);
 
+    // camera
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 40);
+    camera.position.x = 0;
+    camera.position.y = 0;
+    camera.position.z = -1;
+    camera.up.set(0, -1, 0);
+    scene.add(camera);
+
+    // controls
     controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 0, 0); // view direction perpendicular to XY-plane
     controls.enableRotate = true;
@@ -79,9 +75,17 @@ function init() {
     controls.rotateSpeed = 0.2;
     controls.zoomSpeed = 1.2;
 
+    // cloud points loader
+    pcdLoader = new PCDLoader();
+
+    // font for helper text
+    fontLoader = new THREE.FontLoader();
+    fontLoader.load('fonts/helvetiker_regular.typeface.json', function (response) {
+        font = response;
+    });
+
     window.addEventListener('resize', onWindowResize);
     document.querySelector('#resetViewportBtn').addEventListener('click', resetViewport);
-
 }
 
 function getCloudPointFromHash() {
@@ -91,7 +95,7 @@ function getCloudPointFromHash() {
 
 function loadCloudPoints(url) {
     if (scene.children.length > 0) {
-        resetViewport()
+        resetViewport();
         while (scene.children.length > 0) {
             scene.remove(scene.children[0]);
         }
@@ -112,7 +116,6 @@ function loadCloudPoints(url) {
                         'class': obj.classTitle,
                         'geometryType': obj.geometryType,
                         'geometry': null,
-
                     };
 
                     let figure = json.figures.find(x => x.objectKey === obj.key);
@@ -122,40 +125,45 @@ function loadCloudPoints(url) {
                     }
 
                     map.geometry = figure.geometry
-
                     return map
                 });
 
-
                 objects.forEach(obj => {
-                    if (!obj) {
-                        return
-                    }
+                    if (!obj) return;
 
-                    drawHelperBox(obj)
+                    drawHelperBoxForObject(obj)
                 })
-
-
-                /*const geometry = new THREE.BoxGeometry(0.5752128333615767, 0.5480897912194335, 2.8561831118359504);
-                geometry.translate(0.13521005088371357, 0.08174636110693423, 3.9492046827173195);
-                const object = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(0xff0000));
-                const box = new THREE.BoxHelper(object, 0xffff00);
-                scene.add(box);*/
             });
 
+        const material = new THREE.MeshPhongMaterial({
+            color: 'lightblue',
+            opacity: 0.5,
+            transparent: true,
+        });
+
+        // door area
+        /*const geometry = new THREE.BoxGeometry(2, 0.05, 2.8561831118359504);
+        geometry.translate(0, -0.45, 4);
+        const object = new THREE.Mesh(geometry, material);
+        const box = new THREE.BoxHelper(object, 0x0e0e0e);
+        scene.add(box);*/
+
+        // axis helper
+        //scene.add(new THREE.AxesHelper(20));
+
+        // align camera center
         const center = getPointsCenter();
         controls.target.set(center.x, center.y, center.z);
-
-        if (!lastViewportSettingsSaved) {
-            controls.saveState();
-            lastViewportSettingsSaved = true
-        }
-
         controls.update();
+
+        if (!initialViewportSettingsSaved) {
+            controls.saveState();
+            initialViewportSettingsSaved = true
+        }
     });
 }
 
-function drawHelperBox(object) {
+function drawHelperBoxForObject(object) {
     // draw main geometry
     const box = new THREE.BoxGeometry(
         object.geometry.dimensions.x,
@@ -174,29 +182,28 @@ function drawHelperBox(object) {
     scene.add(helper);
 
     // draw label
-    const text = new THREE.TextGeometry( object.class, {
+    drawHelperTextForObject(object)
+}
+
+function drawHelperTextForObject(object) {
+    const text = new THREE.TextGeometry(object.class, {
         font: font,
         size: 0.05,
         height: 0,
     });
     text.computeBoundingBox();
-    let textMesh1 = new THREE.Mesh( text, new THREE.MeshBasicMaterial(0xff0000));
-    textMesh1.position.x = object.geometry.position.x + object.geometry.dimensions.x / 2 + 0.03;
-    textMesh1.position.y = object.geometry.position.y + object.geometry.dimensions.y / 2 + 0.03;
+
+    let textMesh1 = new THREE.Mesh(text, new THREE.MeshBasicMaterial(0xff0000));
+    textMesh1.position.x = object.geometry.position.x + object.geometry.dimensions.x / 2;
+    textMesh1.position.y = object.geometry.position.y + object.geometry.dimensions.y / 2;
     textMesh1.position.z = object.geometry.position.z - object.geometry.dimensions.z / 2;
     textMesh1.rotation.z = 3.15;
     textMesh1.rotation.y = 3.1;
-    scene.add( textMesh1 );
+    scene.add(textMesh1);
 }
 
 function resetViewport() {
-    if (loadedFile) {
-        const center = getPointsCenter();
-        controls.target.set(center.x, center.y, center.z);
-        camera.lookAt(center);
-        controls.reset();
-    }
-
+    controls.reset();
 }
 
 function getPointsCenter() {

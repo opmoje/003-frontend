@@ -9,14 +9,28 @@
 </head>
 <body>
 <div id="app">
+    <div id="header">
+        <img
+                src="img/logo.svg"
+                class="c-sidebar-brand-full"
+                size="custom-size"
+                :height="45"
+        >
+    </div>
     <div id="info">
-        <button id="resetViewportBtn">Сбросить viewport</button>
         <div>ЛКМ: панорамирвоание</div>
         <div>ПКМ: вращение</div>
-        <div>Колесико: зуммирование</div>
+        <div>Колесо мыши: зуммирование</div>
+        <button id="resetViewportBtn">Сбросить Viewport</button>
     </div>
     <div id="explorer">
-        <div><strong>Выбор файла</strong></div>
+        <div>
+            <h3>Выбор файла</h3>
+        </div>
+        <div>
+            <el-button type="upload" size="mini" icon="el-icon-upload">Загрузить свой</el-button>
+        </div>
+        <div id="explorerList"></div>
     </div>
     <div id="status">
         <div class="block">
@@ -58,7 +72,15 @@
                     Безопасное движение поезда
                 </el-timeline-item>
             </el-timeline>
-
+        </div>
+        <div id="moveStatus">
+            <span class="tag-group__title">Продолжать движение</span>
+            <!--<el-tag type="success" effect="dark">
+                Безопасно
+            </el-tag>-->
+            <el-tag type="danger" effect="dark">
+                Опасно
+            </el-tag>
         </div>
     </div>
 </div>
