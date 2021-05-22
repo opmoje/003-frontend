@@ -5,17 +5,74 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <link type="text/css" rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
 </head>
 <body>
-<div id="info">
-    <button id="resetViewportBtn">Сбросить viewport</button>
-    <div>ЛКМ: панорамирвоание</div>
-    <div>ПКМ: вращение</div>
-    <div>Колесико: зуммирование</div>
+<div id="app">
+    <div id="info">
+        <button id="resetViewportBtn">Сбросить viewport</button>
+        <div>ЛКМ: панорамирвоание</div>
+        <div>ПКМ: вращение</div>
+        <div>Колесико: зуммирование</div>
+    </div>
+    <div id="explorer">
+        <div><strong>Выбор файла</strong></div>
+    </div>
+    <div id="status">
+        <div class="block">
+            <h3>Состояние платформы</h3>
+            <el-timeline>
+                <el-timeline-item
+                        class="success"
+                        color="#64e649"
+                        timestamp="Да">
+                    Поезд на платформе
+                </el-timeline-item>
+                <el-timeline-item
+                        class="fail"
+                        color="#bd0b0b"
+                        timestamp="Полуоткрыты">
+                    Состояние дверей
+                </el-timeline-item>
+                <el-timeline-item
+                        class="fail"
+                        color="#bd0b0b"
+                        timestamp="Не пустой">
+                    Портал дверей
+                </el-timeline-item>
+            </el-timeline>
+        </div>
+        <div class="block">
+            <h3>Разрешенные действия</h3>
+            <el-timeline>
+                <el-timeline-item
+                        class="fail"
+                        color="#64e649"
+                        timestamp="Нет">
+                    Безопасное закрытие дверей
+                </el-timeline-item>
+                <el-timeline-item
+                        class="fail"
+                        color="#bd0b0b"
+                        timestamp="Нет">
+                    Безопасное движение поезда
+                </el-timeline-item>
+            </el-timeline>
+
+        </div>
+    </div>
 </div>
-<div id="explorer">
-    <div><b>Выбор точки</b></div>
-</div>
+
 <script type="module" src="js/app.js"></script>
 </body>
+<!-- import Vue before Element -->
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- import JavaScript -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+
+    })
+</script>
 </html>

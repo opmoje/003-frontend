@@ -6,6 +6,7 @@ import {OrbitControls} from 'https://cdn.skypack.dev/pin/three@v0.128.0-rCTln0kV
 let container;
 let camera, controls, scene, renderer;
 let loader, loadedFile;
+let lastViewportSettingsSaved = false;
 
 init();
 animate();
@@ -19,7 +20,7 @@ function init() {
         .then(cloudPointsList => {
 
             let loadFile = getCloudPointFromHash(),
-                loadFileFound = false
+                loadFileFound = false;
 
             var listEl = document.getElementById("explorer");
             cloudPointsList.forEach(item => {
@@ -33,14 +34,14 @@ function init() {
                 listEl.append(listItem)
 
                 if (fileName === loadFile) {
-                    loadFile = item
-                    loadFileFound = true
+                    loadFile = item;
+                    loadFileFound = true;
                 }
             })
 
 
             if (loadFileFound) {
-                loadCloudPoints(loadFile)
+                loadCloudPoints(loadFile);
             }
         });
 
@@ -84,16 +85,24 @@ function getCloudPointFromHash() {
 }
 
 function loadCloudPoints(url) {
-    while (scene.children.length > 0) {
-        scene.remove(scene.children[0]);
+    if (scene.children.length > 0) {
+        resetViewport()
+        while (scene.children.length > 0) {
+            scene.remove(scene.children[0]);
+        }
     }
 
     loader.load(url, function (points) {
-        loadedFile = baseName(url)
+        loadedFile = baseName(url);
         scene.add(points);
         const center = getPointsCenter();
         controls.target.set(center.x, center.y, center.z);
-        controls.saveState();
+
+        if (!lastViewportSettingsSaved) {
+            controls.saveState();
+            lastViewportSettingsSaved = true
+        }
+
         controls.update();
     });
 }
@@ -114,18 +123,15 @@ function getPointsCenter() {
 }
 
 function onWindowResize() {
-
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth - 260, window.innerHeight);
 }
 
 function animate() {
-
     requestAnimationFrame(animate);
     controls.update();
     renderer.render(scene, camera);
-
 }
 
 function baseName(str) {
