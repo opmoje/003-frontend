@@ -23,14 +23,14 @@ function init() {
                 loadFileFound = false;
 
             var listEl = document.getElementById("explorerList");
-
-            cloudPointsList.forEach(item => {
+            for (var prop in cloudPointsList) {
+                let item = cloudPointsList[prop];
                 let listItem = document.createElement('a');
-                let fileName = baseName(item);
+                let fileName = baseName(item.clouds_stereo);
                 listItem.innerHTML = fileName + '<br>';
                 listItem.setAttribute('href', '#f=' + fileName);
                 listItem.onclick = function () {
-                    loadCloudPointsFromUrl(item)
+                    loadCloudPoints(item)
                 };
                 listEl.append(listItem);
 
@@ -38,10 +38,10 @@ function init() {
                     loadFile = item;
                     loadFileFound = true;
                 }
-            })
+            }
 
             if (loadFileFound) {
-                loadCloudPointsFromUrl(loadFile);
+                loadCloudPoints(loadFile);
             }
         });
 
@@ -60,8 +60,8 @@ function init() {
     // camera
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 1200);
     camera.position.x = 0.0849549168207146;
-    camera.position.y = 3.5028061182970034;
-    camera.position.z = -4.691810677626485;
+    camera.position.y = 7.0;
+    camera.position.z = -2.691810677626485;
     camera.up.set(0, 1, 0);
     scene.add(camera);
 
@@ -94,26 +94,33 @@ function getCloudPointFromHash() {
     return (match ? match[1] : "");
 }
 
-function loadCloudPointsFromUrl(url) {
-    cleanScene();
 
+function loadCloudPoints(item) {
+    cleanScene();
+    loadCloudPointsFromUrl(item.clouds_stereo)
+    loadJsonFromUrl(item.clouds_stereo_ann)
+    //loadCloudPointsFromUrl(item.clouds_tof, 1, 1, 0)
+}
+
+function loadCloudPointsFromUrl(url, correctX, correctY, correctZ) {
     pcdLoader.load(url, function (pointsCloud) {
         loadedFile = baseName(url);
         correctObjectRotation(pointsCloud);
-        scene.add(pointsCloud);
 
-        fetch(url + '.json')
-            .then(response => {
-                return response.json();
-            })
-            .then(json => {
-                json.objects.map(obj => {
-                    let figures = json.figures.filter(x => x.objectKey === obj.key);
-                    figures.forEach(figure => {
-                        drawHelperBoxForObject(figure, obj.classTitle)
-                    });
-                });
-            });
+
+        if (typeof correctX !== "undefined") {
+            pointsCloud.position.x += correctX
+        }
+
+        if (typeof correctY !== "undefined") {
+            pointsCloud.position.y += correctY
+        }
+
+        if (typeof correctZ !== "undefined") {
+            pointsCloud.position.z += correctZ
+        }
+
+        scene.add(pointsCloud);
 
         // axis helper
         //scene.add(new THREE.AxesHelper(20));
@@ -133,6 +140,21 @@ function loadCloudPointsFromUrl(url) {
             initialViewportSettingsSaved = true
         }
     });
+}
+
+function loadJsonFromUrl(url) {
+    fetch(url)
+        .then(response => {
+            return response.json();
+        })
+        .then(json => {
+            json.objects.map(obj => {
+                let figures = json.figures.filter(x => x.objectKey === obj.key);
+                figures.forEach(figure => {
+                    drawHelperBoxForObject(figure, obj.classTitle)
+                });
+            });
+        });
 }
 
 function loadCloudPointsFromFile() {
