@@ -1,6 +1,6 @@
 import * as THREE
     from 'https://cdn.skypack.dev/pin/three@v0.128.0-rCTln0kVGE6riMrX0Nux/mode=imports/optimized/three.js';
-import {PCDLoader} from '/js/PCDLoader.js';
+import {PCDLoader} from 'https://cdn.skypack.dev/pin/three@v0.128.0-rCTln0kVGE6riMrX0Nux/mode=imports,min/unoptimized/examples/jsm/loaders/PCDLoader.js';
 import {OrbitControls} from 'https://cdn.skypack.dev/pin/three@v0.128.0-rCTln0kVGE6riMrX0Nux/mode=imports,min/unoptimized/examples/jsm/controls/OrbitControls.js';
 
 let container;
@@ -30,7 +30,7 @@ function init() {
                 listItem.innerHTML = fileName + '<br>';
                 listItem.setAttribute('href', '#f=' + fileName);
                 listItem.onclick = function () {
-                    loadCloudPoints(item)
+                    loadCloudPointsFromUrl(item)
                 };
                 listEl.append(listItem);
 
@@ -41,7 +41,7 @@ function init() {
             })
 
             if (loadFileFound) {
-                loadCloudPoints(loadFile);
+                loadCloudPointsFromUrl(loadFile);
             }
         });
 
@@ -86,6 +86,7 @@ function init() {
 
     window.addEventListener('resize', onWindowResize);
     document.querySelector('#resetViewportBtn').addEventListener('click', resetViewport);
+    document.querySelector('input#pcdFile').addEventListener('change', loadCloudPointsFromFile);
 }
 
 function getCloudPointFromHash() {
@@ -93,13 +94,8 @@ function getCloudPointFromHash() {
     return (match ? match[1] : "");
 }
 
-function loadCloudPoints(url) {
-    if (scene.children.length > 0) {
-        resetViewport();
-        while (scene.children.length > 0) {
-            scene.remove(scene.children[0]);
-        }
-    }
+function loadCloudPointsFromUrl(url) {
+    cleanScene();
 
     pcdLoader.load(url, function (pointsCloud) {
         loadedFile = baseName(url);
@@ -111,38 +107,21 @@ function loadCloudPoints(url) {
                 return response.json();
             })
             .then(json => {
-
-                let objects = json.objects.map(obj => {
-                    let map = {
-                        'class': obj.classTitle,
-                        'geometryType': obj.geometryType,
-                        'geometry': null,
-                    };
-
-                    let figure = json.figures.find(x => x.objectKey === obj.key);
-
-                    if (typeof figure === 'undefined') {
-                        return null
-                    }
-
-                    map.geometry = figure.geometry
-                    return map
+                json.objects.map(obj => {
+                    let figures = json.figures.filter(x => x.objectKey === obj.key);
+                    figures.forEach(figure => {
+                        drawHelperBoxForObject(figure, obj.classTitle)
+                    });
                 });
-
-                objects.forEach(obj => {
-                    if (!obj) return;
-
-                    drawHelperBoxForObject(obj)
-                })
             });
 
         // axis helper
         //scene.add(new THREE.AxesHelper(20));
 
-        const helper = new THREE.GridHelper( 60, 60 );
+        const helper = new THREE.GridHelper(60, 60);
         helper.material.opacity = 0.1;
         helper.material.transparent = true;
-        scene.add( helper );
+        scene.add(helper);
 
         // align camera center
         const center = getPointsCenter();
@@ -156,7 +135,44 @@ function loadCloudPoints(url) {
     });
 }
 
-function drawHelperBoxForObject(object) {
+function loadCloudPointsFromFile() {
+    var file    = document.querySelector('input#pcdFile').files[0];
+    var reader  = new FileReader();
+
+    reader.readAsArrayBuffer(file);
+    reader.onload = function() {
+
+        let pointsCloud = pcdLoader.parse(reader.result, 'test.pcd')
+
+        if (pointsCloud) {
+            cleanScene();
+            loadedFile = baseName('test.pcd');
+            correctObjectRotation(pointsCloud);
+            scene.add(pointsCloud);
+
+            const helper = new THREE.GridHelper(60, 60);
+            helper.material.opacity = 0.1;
+            helper.material.transparent = true;
+            scene.add(helper);
+
+            // align camera center
+            const center = getPointsCenter();
+            controls.target.set(center.x, center.y, center.z);
+            controls.update();
+
+            if (!initialViewportSettingsSaved) {
+                controls.saveState();
+                initialViewportSettingsSaved = true
+            }
+        }
+    };
+
+    reader.onerror = function() {
+        console.log(reader.error);
+    };
+}
+
+function drawHelperBoxForObject(object, title) {
     // draw main geometry
     const box = new THREE.BoxGeometry(
         object.geometry.dimensions.x,
@@ -170,13 +186,29 @@ function drawHelperBoxForObject(object) {
         object.geometry.position.z
     );
 
-    //let color = '#ff0000';
-    const mesh = new THREE.Mesh(box, new THREE.MeshBasicMaterial(0xff0000));
+    const mesh = new THREE.Mesh(box, new THREE.MeshBasicMaterial(0x000000));
     correctObjectRotation(mesh);
-    const helper = new THREE.BoxHelper(mesh, 0xff0000);
+    const color = new THREE.Color("rgb(186,29,29)");
+    const helper = new THREE.BoxHelper(mesh, color);
+    helper.geometry.computeBoundingBox();
     scene.add(helper);
 
-    scene.updateMatrixWorld(true);
+    // draw label
+    drawHelperTextForBoundingBox(title, helper.geometry.boundingBox)
+}
+
+function drawHelperTextForBoundingBox(label, boundingBox) {
+    const text = new THREE.TextGeometry(label, {
+        font: font,
+        size: 0.07,
+        height: 0,
+    });
+
+    let textMesh1 = new THREE.Mesh(text, new THREE.MeshBasicMaterial(0xffffff));
+    textMesh1.position.set(boundingBox.max.x, boundingBox.max.y + 0.05, boundingBox.max.z);
+    textMesh1.rotateX(-2.8);
+    textMesh1.rotateZ(3.14);
+    scene.add(textMesh1);
 }
 
 function correctObjectRotation(object) {
@@ -184,6 +216,15 @@ function correctObjectRotation(object) {
     object.rotateZ(3.1);
     object.rotateY(-0.1);
     object.position.y += 5.5
+}
+
+function cleanScene() {
+    if (scene.children.length > 0) {
+        resetViewport();
+        while (scene.children.length > 0) {
+            scene.remove(scene.children[0]);
+        }
+    }
 }
 
 function resetViewport() {

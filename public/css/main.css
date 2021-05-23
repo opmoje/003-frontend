@@ -83,11 +83,13 @@ button {
     top: 3px;
     right: 0;
     width: 260px;
+    height: 95%;
     padding: 10px;
     box-sizing: border-box;
     text-align: left;
     z-index: 1;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 #explorerList {
